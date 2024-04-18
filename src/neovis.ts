@@ -181,9 +181,11 @@ function _propertyToHtml<T extends { toString: () => string }>(key: string, valu
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function _retrieveProperty<T>(prop: string, obj: any): T {
 	if (typeof obj?.properties === 'object') {
-		return isInt(obj.properties[prop]) ?
-			integerToNumber(obj.properties[prop])
-			: obj.properties[prop];
+		return typeof obj.properties[prop] === 'bigint'
+			? `${obj.properties[prop]}`
+			:isInt(obj.properties[prop]) ?
+				integerToNumber(obj.properties[prop])
+				: obj.properties[prop];
 	}
 	throw new Error('Neo4j object is not properly constructed');
 }
