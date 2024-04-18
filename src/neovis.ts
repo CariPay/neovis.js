@@ -567,6 +567,7 @@ export class NeoVis {
 				? integerToNumber(r.end as Neo4jTypes.Integer)
 				: r.end as number;
 		edge.raw = r;
+		edge.label = r.type;
 
 		await this.#buildVisObject(relationshipConfig, edge as Edge, r, r.identity);
 
