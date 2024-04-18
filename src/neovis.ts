@@ -3,6 +3,7 @@
 import * as Neo4jTypes from 'neo4j-driver';
 import Neo4j from 'neo4j-driver';
 import * as Neo4jCore from 'neo4j-driver-core';
+import type { NumberOrInteger } from 'neo4j-driver-core';
 import { isInt, isNode, isPath, isRelationship } from 'neo4j-driver-core';
 import * as vis from 'vis-network/standalone';
 import { defaults } from './defaults';
@@ -24,7 +25,6 @@ import {
 	NonFlatNeoVisAdvanceConfig,
 	NonFlatNeovisConfig,
 	NonFlatRelationsipConfig,
-	NumberOrInteger,
 	RecursiveMapTo,
 	RecursiveMapToFunction,
 	RelationshipConfig
@@ -181,9 +181,11 @@ function _propertyToHtml<T extends { toString: () => string }>(key: string, valu
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function _retrieveProperty<T>(prop: string, obj: any): T {
 	if (typeof obj?.properties === 'object') {
-		return isInt(obj.properties[prop]) ?
-			integerToNumber(obj.properties[prop])
-			: obj.properties[prop];
+		return typeof obj.properties[prop] === 'bigint'
+			? `${obj.properties[prop]}`
+			:isInt(obj.properties[prop]) ?
+				integerToNumber(obj.properties[prop])
+				: obj.properties[prop];
 	}
 	throw new Error('Neo4j object is not properly constructed');
 }
@@ -379,7 +381,7 @@ export class NeoVis {
 		this.#config.groupAsLabel = config.groupAsLabel ?? defaults.neo4j.groupAsLabel;
 	}
 
-	async #runCypher<T>(cypher: Cypher, id: number | Neo4jTypes.Integer): Promise<T | T[]> {
+	async #runCypher<T>(cypher: Cypher, id: NumberOrInteger): Promise<T | T[]> {
 		const session = this.#driver.session(this.#database && { database: this.#database });
 		const results: T[] = [];
 
@@ -443,7 +445,7 @@ export class NeoVis {
 		}
 	}
 
-	*#buildCypherObject<VIS_TYPE>(cypherConfig: RecursiveMapTo<VIS_TYPE, Cypher>, object: VIS_TYPE, id: number | Neo4jTypes.Integer): Generator<Promise<void>> {
+	*#buildCypherObject<VIS_TYPE>(cypherConfig: RecursiveMapTo<VIS_TYPE, Cypher>, object: VIS_TYPE, id: NumberOrInteger): Generator<Promise<void>> {
 		if (cypherConfig && typeof cypherConfig === 'object') {
 			for (const prop of Object.keys(cypherConfig) as (keyof VIS_TYPE)[]) {
 				const value = cypherConfig[prop];
@@ -478,7 +480,7 @@ export class NeoVis {
 	}
 
 	async #buildVisObject<VIS_TYPE, NEO_TYPE>(
-		config: NeovisDataConfig<VIS_TYPE, NEO_TYPE> | NonFlatNeoVisAdvanceConfig<VIS_TYPE, NEO_TYPE>, baseObject: VIS_TYPE, neo4jObject: NEO_TYPE, id: number | Neo4jTypes.Integer
+		config: NeovisDataConfig<VIS_TYPE, NEO_TYPE> | NonFlatNeoVisAdvanceConfig<VIS_TYPE, NEO_TYPE>, baseObject: VIS_TYPE, neo4jObject: NEO_TYPE, id: NumberOrInteger
 	): Promise<void> {
 		if (!config) {
 			return;
@@ -525,8 +527,11 @@ export class NeoVis {
 
 		const labelConfig: LabelConfig | NonFlatLabelConfig = this.#config?.labels?.[label] ?? (this.#config as NonFlatNeovisConfig)?.defaultLabelConfig ??
 			(this.#config as NeovisConfig)?.labels?.[NEOVIS_DEFAULT_CONFIG];
-
-		node.id = isInt(neo4jNode.identity) ? integerToNumber(neo4jNode.identity as Neo4jTypes.Integer) : neo4jNode.identity as number;
+		node.id = typeof neo4jNode.identity === 'bigint'
+			? `${neo4jNode.identity}`
+			: isInt(neo4jNode.identity)
+				? integerToNumber(neo4jNode.identity as Neo4jTypes.Integer)
+				: neo4jNode.identity as number;
 		node.raw = neo4jNode;
 		if (this.#config.groupAsLabel) {
 			node.group = label;
@@ -548,10 +553,23 @@ export class NeoVis {
 			(this.#config as NeovisConfig)?.relationships?.[NEOVIS_DEFAULT_CONFIG];
 
 		const edge: Partial<Edge> = {};
-		edge.id = isInt(r.identity) ? integerToNumber(r.identity as Neo4jTypes.Integer) : r.identity as number;
-		edge.from = isInt(r.start) ? integerToNumber(r.start as Neo4jTypes.Integer) : r.start as number;
-		edge.to = isInt(r.end) ? integerToNumber(r.end as Neo4jTypes.Integer) : r.end as number;
+		edge.id = typeof r.identity === 'bigint'
+			? `${r.identity}`
+			: isInt(r.identity)
+				? integerToNumber(r.identity as Neo4jTypes.Integer)
+				: r.identity as number;
+		edge.from = typeof r.start === 'bigint'
+			? `${r.start}`
+			: isInt(r.start)
+				? integerToNumber(r.start as Neo4jTypes.Integer)
+				: r.start as number;
+		edge.to = typeof r.end === 'bigint'
+			? `${r.end}`
+			: isInt(r.end)
+				? integerToNumber(r.end as Neo4jTypes.Integer)
+				: r.end as number;
 		edge.raw = r;
+		edge.label = r.type;
 
 		await this.#buildVisObject(relationshipConfig, edge as Edge, r, r.identity);
 

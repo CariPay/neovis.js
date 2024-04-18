@@ -1,7 +1,8 @@
 import * as Neo4jTypes from 'neo4j-driver';
+import type { NumberOrInteger } from 'neo4j-driver-core';
 import { EventFunctionTypes, NeoVisEvents } from './events';
 import type * as VisNetwork from 'vis-network';
-import { Cypher, DataFunctionType, Edge, NEOVIS_DEFAULT_CONFIG, NeovisConfig, Node, NonFlatNeovisConfig, NumberOrInteger } from './types';
+import { Cypher, DataFunctionType, Edge, NEOVIS_DEFAULT_CONFIG, NeovisConfig, Node, NonFlatNeovisConfig } from './types';
 export * from './events';
 export * from './types';
 /**

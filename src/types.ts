@@ -1,10 +1,10 @@
 import type * as Neo4jTypes from 'neo4j-driver';
+import { type NumberOrInteger } from 'neo4j-driver-core';
 import type * as VisNetwork from 'vis-network';
 
 
 export const NEOVIS_DEFAULT_CONFIG = Symbol();
 export const NEOVIS_ADVANCED_CONFIG = Symbol();
-export type NumberOrInteger = number | Neo4jTypes.Integer;
 
 export type RecursiveMapToDist<T, New> = T extends object ? RecursiveMapTo<T, New> : New
 export type DataFunctionType = (any?: unknown) => AsyncIterable<Neo4jTypes.Record> | Promise<Iterable<Neo4jTypes.Record>> | Iterable<Neo4jTypes.Record>;
