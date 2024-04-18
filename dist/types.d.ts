@@ -129,11 +129,6 @@ export interface BaseNeovisConfig {
      * @default false
      */
     nonFlat?: boolean;
-    /**
-     * Tells Neovis that the identity type is of type bigint if true or it's default type as a number if false
-     * @default false
-     */
-    useBigInt?: boolean;
 }
 /**
  * @example
@@ -322,7 +317,6 @@ export interface NonFlatNeovisConfig extends BaseNeovisConfig {
     defaultRelationshipsConfig?: NonFlatRelationsipConfig;
     labels?: Record<string, NonFlatLabelConfig>;
     relationships?: Record<string, NonFlatRelationsipConfig>;
-    useBigInt?: boolean;
 }
 /**
  * A network node with raw neo4j node
