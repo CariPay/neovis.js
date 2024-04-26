@@ -118,7 +118,7 @@ function isFakeInteger(property: FakeIdentity | unknown): property is FakeIdenti
 function propertyToNormal(value: unknown): unknown {
 	if (Array.isArray(value)) {
 		return value.map(propertyToNormal);
-	} else if(typeof value === 'object' && Object.keys(value).length in FakeTypeToType) {
+	} else if (value && typeof value === 'object' && Object.keys(value).length in FakeTypeToType) {
 		for(const fakeType of FakeTypeToType[Object.keys(value).length]) {
 			let isCorrectType = true;
 			const rets: unknown[] = [];
