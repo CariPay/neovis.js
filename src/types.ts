@@ -145,6 +145,11 @@ export interface BaseNeovisConfig {
 	 * @default false
 	 */
 	nonFlat?: boolean;
+	/**
+	 * Tells Neovis whether to use bigint or not
+	 * @default false
+	 */
+	useBigInt?: boolean;
 }
 
 /**
