@@ -161,6 +161,8 @@ function dumbToNeo4j(field: FakeNode | FakeRelationship | FakePath): Neo4jTypes.
 				new Neo4j.types.Node(toNeo4jInt(segment.end.identity), segment.end.labels, properyMapWithIdentity(segment.end.properties))
 			))
 		);
+	} else if (Array.isArray(field)) {
+		return field.flatMap(dumbToNeo4j);
 	}
 }
 
