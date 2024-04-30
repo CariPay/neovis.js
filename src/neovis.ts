@@ -41,6 +41,10 @@ function integerToNumber(integer: Neo4jTypes.Integer): number | string {
 	return integer.getHighBits() === 0 ? integer.toInt() : integer.toString();
 }
 
+function bigIntToString(integer: Neo4jTypes.Integer): string {
+	return integer.toBigInt().toString();
+}
+
 interface FakeIdentity {
 	high: number,
 	low: number
@@ -118,7 +122,7 @@ function isFakeInteger(property: FakeIdentity | unknown): property is FakeIdenti
 function propertyToNormal(value: unknown): unknown {
 	if (Array.isArray(value)) {
 		return value.map(propertyToNormal);
-	} else if(typeof value === 'object' && Object.keys(value).length in FakeTypeToType) {
+	} else if (value && typeof value === 'object' && Object.keys(value).length in FakeTypeToType) {
 		for(const fakeType of FakeTypeToType[Object.keys(value).length]) {
 			let isCorrectType = true;
 			const rets: unknown[] = [];
@@ -146,7 +150,7 @@ function properyMapWithIdentity(properties: Record<string, FakeIdentity | unknow
 	}, {});
 }
 
-function dumbToNeo4j(field: FakeNode | FakeRelationship | FakePath): Neo4jTypes.Node | Neo4jTypes.Relationship | Neo4jTypes.Path {
+function dumbToNeo4j(field: FakeNode | FakeRelationship | FakePath | FakeNode[] | FakeRelationship[] | FakePath[]): Neo4jTypes.Node | Neo4jTypes.Relationship | Neo4jTypes.Path | (Neo4jTypes.Node | Neo4jTypes.Relationship | Neo4jTypes.Path)[] {
 	if ('labels' in field) {
 		return new Neo4j.types.Node(toNeo4jInt(field.identity), field.labels, properyMapWithIdentity(field.properties));
 	} else if ('type' in field) {
@@ -161,6 +165,8 @@ function dumbToNeo4j(field: FakeNode | FakeRelationship | FakePath): Neo4jTypes.
 				new Neo4j.types.Node(toNeo4jInt(segment.end.identity), segment.end.labels, properyMapWithIdentity(segment.end.properties))
 			))
 		);
+	} else if (Array.isArray(field)) {
+		return field.flatMap(dumbToNeo4j);
 	}
 }
 
@@ -179,12 +185,12 @@ function _propertyToHtml<T extends { toString: () => string }>(key: string, valu
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function _retrieveProperty<T>(prop: string, obj: any): T {
+function _retrieveProperty<T>(prop: string, obj: any, useBigInt = false): T {
 	if (typeof obj?.properties === 'object') {
 		return typeof obj.properties[prop] === 'bigint'
 			? `${obj.properties[prop]}`
 			:isInt(obj.properties[prop]) ?
-				integerToNumber(obj.properties[prop])
+				useBigInt ? bigIntToString(obj.properties[prop]) : integerToNumber(obj.properties[prop])
 				: obj.properties[prop];
 	}
 	throw new Error('Neo4j object is not properly constructed');
@@ -439,7 +445,7 @@ export class NeoVis {
 					this.#buildPropertyNameObject(property as RecursiveMapTo<VIS_TYPE[keyof VIS_TYPE], string>, object[prop], neo4jObj);
 				} else {
 					const value = propertyNameConfig[prop];
-					object[prop] = _retrieveProperty(value as string, neo4jObj);
+					object[prop] = _retrieveProperty(value as string, neo4jObj, this.#config.useBigInt);
 				}
 			}
 		}
@@ -527,10 +533,11 @@ export class NeoVis {
 
 		const labelConfig: LabelConfig | NonFlatLabelConfig = this.#config?.labels?.[label] ?? (this.#config as NonFlatNeovisConfig)?.defaultLabelConfig ??
 			(this.#config as NeovisConfig)?.labels?.[NEOVIS_DEFAULT_CONFIG];
+		const useBigInt: boolean = this.#config?.useBigInt;
 		node.id = typeof neo4jNode.identity === 'bigint'
 			? `${neo4jNode.identity}`
 			: isInt(neo4jNode.identity)
-				? integerToNumber(neo4jNode.identity as Neo4jTypes.Integer)
+				? useBigInt ? bigIntToString(neo4jNode.identity as Neo4jTypes.Integer) : integerToNumber(neo4jNode.identity as Neo4jTypes.Integer)
 				: neo4jNode.identity as number;
 		node.raw = neo4jNode;
 		if (this.#config.groupAsLabel) {
@@ -553,20 +560,21 @@ export class NeoVis {
 			(this.#config as NeovisConfig)?.relationships?.[NEOVIS_DEFAULT_CONFIG];
 
 		const edge: Partial<Edge> = {};
+		const useBigInt: boolean = this.#config?.useBigInt;
 		edge.id = typeof r.identity === 'bigint'
 			? `${r.identity}`
 			: isInt(r.identity)
-				? integerToNumber(r.identity as Neo4jTypes.Integer)
+				? useBigInt ? bigIntToString(r.identity as Neo4jTypes.Integer) : integerToNumber(r.identity as Neo4jTypes.Integer)
 				: r.identity as number;
 		edge.from = typeof r.start === 'bigint'
 			? `${r.start}`
 			: isInt(r.start)
-				? integerToNumber(r.start as Neo4jTypes.Integer)
+				? useBigInt ? bigIntToString(r.start as Neo4jTypes.Integer) : integerToNumber(r.start as Neo4jTypes.Integer)
 				: r.start as number;
 		edge.to = typeof r.end === 'bigint'
 			? `${r.end}`
 			: isInt(r.end)
-				? integerToNumber(r.end as Neo4jTypes.Integer)
+				? useBigInt ? bigIntToString(r.end as Neo4jTypes.Integer) : integerToNumber(r.end as Neo4jTypes.Integer)
 				: r.end as number;
 		edge.raw = r;
 		edge.label = r.type;
