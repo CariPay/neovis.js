@@ -91,5 +91,6 @@
     "transformIgnorePatterns": [
       "node_modules[/\\\\](?!vis-network)"
     ]
-  }
+  },
+  "packageManager": "yarn@3.6.4"
 }
